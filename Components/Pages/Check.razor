@@ -4,101 +4,113 @@
 @inject AdmissionService AdmissionService
 @rendermode InteractiveServer
 
-<div class="container mt-4">
-    <div class="row">
+<div class="left-sidebar">
+    <img src="/logo.png" alt="Логотип" class="logo-image" />
+    <div class="sidebar-item">
         <!-- Левая колонка - ввод данных -->
-        <div class="col-md-6">
-            <h3>Ввод баллов ЕГЭ</h3>
+        
+        <h3>Ввод баллов ЕГЭ</h3>
 
-            <div class="card">
-                <div class="card-body">
-                    @for (int i = 0; i < 3; i++)
-                    {
-                        var index = i; // Локальная переменная для каждой итерации
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <label class="form-label">Предмет @(index + 1)</label>
-                                <select class="form-select" @bind="SelectedSubjects[index]">
-                                    <option value="">Выберите предмет</option>
-                                    @foreach (var subject in AvailableSubjects)
-                                    {
-                                        <option value="@subject">@subject.ToString()</option>
-                                    }
-                                </select>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Баллы</label>
-                                <input type="number"
-                                       class="form-control"
-                                       min="0"
-                                       max="100"
-                                       @bind="Scores[index]" />
-                            </div>
+        <div class="card">
+            <div class="card-body">
+                @for (int i = 0; i < 3; i++)
+                {
+                    var index = i; // Локальная переменная для каждой итерации
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Предмет @(index + 1)</label>
+                            <select class="form-select" @bind="SelectedSubjects[index]">
+                                <option value="">Выберите предмет</option>
+                                @foreach (var subject in AvailableSubjects)
+                                {
+                                    <option value="@subject">@subject.ToString()</option>
+                                }
+                            </select>
                         </div>
-                    }
-                </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Баллы</label>
+                            <input type="number"
+                                    class="form-control"
+                                    min="0"
+                                    max="100"
+                                    @bind="Scores[index]" />
+                        </div>
+                    </div>
+                }
             </div>
         </div>
+    </div>
+    <div class="sidebar-item">
+        <div class="input-group mb-3">
+            <span class="input-group-text">Минимальный балл:</span>
+            <input type="number" class="form-control" @bind="MinPassingScore" min="0" />
+        </div>
 
-        <!-- Правая колонка - результаты -->
-        <div class="col-md-6">
-            <h3>Подходящие специальности</h3>
+        <button class="btn btn-primary mb-3" @onclick="Calculate">
+            Показать специальности
+        </button>
+    </div>
+</div>
 
-            <div class="input-group mb-3">
-                <span class="input-group-text">Минимальный балл:</span>
-                <input type="number" class="form-control" @bind="MinPassingScore" min="0" />
-            </div>
 
-            <button class="btn btn-primary mb-3" @onclick="Calculate">
-                Показать специальности
-            </button>
+<div class="container mt-4">
+    <div class="right-page">
+        <div class="row">
+        
 
-            @if (MatchingSpecialties == null)
-            {
-                <div class="alert alert-info">
-                    Введите баллы и нажмите кнопку
-                </div>
-            }
-            else if (!MatchingSpecialties.Any())
-            {
-                <div class="alert alert-warning">
-                    Подходящих специальностей не найдено
-                </div>
-            }
-            else
-            {
-                <div class="list-group">
-                    @foreach (var spec in MatchingSpecialties.OrderBy(s => s.PassingScore))
-                    {
-                        var totalScore = CalculateTotalScore(spec);
-                        <div class="list-group-item">
-                            <h5>@spec.Name</h5>
-                            <div class="d-flex justify-content-between">
-                                <div>
-                                    <span>Проходной балл: @spec.PassingScore</span>
-                                    <div class="text-muted small mt-1">
-                                        @string.Join(", ", spec.RequiredSubjects)
+            <!-- Правая колонка - результаты -->
+            <div class="col-md-6">
+                <h3>Подходящие специальности</h3>
+
+                
+
+                @if (MatchingSpecialties == null)
+                {
+                    <div class="alert alert-info">
+                        Введите баллы и нажмите кнопку
+                    </div>
+                }
+                else if (!MatchingSpecialties.Any())
+                {
+                    <div class="alert alert-warning">
+                        Подходящих специальностей не найдено
+                    </div>
+                }
+                else
+                {
+                    <div class="list-group">
+                        @foreach (var spec in MatchingSpecialties.OrderBy(s => s.PassingScore))
+                        {
+                            var totalScore = CalculateTotalScore(spec);
+                            <div class="list-group-item">
+                                <h5>@spec.Name</h5>
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <span>Проходной балл: @spec.PassingScore</span>
+                                        <div class="text-muted small mt-1">
+                                            @string.Join(", ", spec.RequiredSubjects)
+                                        </div>
+                                    </div>
+                                    <div>
+                                        @if (totalScore.HasValue)
+                                        {
+                                            <span class="badge @GetScoreBadgeClass(totalScore.Value, spec.PassingScore)">
+                                                @totalScore.Value баллов
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary">
+                                                Нет данных
+                                            </span>
+                                        }
                                     </div>
                                 </div>
-                                <div>
-                                    @if (totalScore.HasValue)
-                                    {
-                                        <span class="badge @GetScoreBadgeClass(totalScore.Value, spec.PassingScore)">
-                                            @totalScore.Value баллов
-                                        </span>
-                                    }
-                                    else
-                                    {
-                                        <span class="badge bg-secondary">
-                                            Нет данных
-                                        </span>
-                                    }
-                                </div>
                             </div>
-                        </div>
-                    }
-                </div>
-            }
+                        }
+                    </div>
+                }
+            </div>
         </div>
     </div>
 </div>

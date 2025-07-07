@@ -4,6 +4,7 @@
     {
         public int Id { get; set; }
         public string Name { get; set; }
+        public string Institute { get; set; }
         public int PassingScore { get; set; }
         public List<Subject> RequiredSubjects { get; set; } = new();
     }

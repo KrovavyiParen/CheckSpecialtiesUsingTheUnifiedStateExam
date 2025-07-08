@@ -1,6 +1,7 @@
 ﻿@page "/"
 @using CheckSpecialtiesUsingTheUnifiedStateExam.Components.Models
 @using CheckSpecialtiesUsingTheUnifiedStateExam.Components.Data
+@inject NavigationManager Navigation
 @inject AdmissionService AdmissionService
 @rendermode InteractiveServer
 
@@ -108,6 +109,9 @@
                                     </div>
                                 </div>
                             </div>
+                            <button @onclick="() => OpenChat(spec.Id)" class="chat-btn">
+                                Спросить о направлении
+                            </button>
                         }
                     </div>
                 }
@@ -127,6 +131,12 @@
 
     // Список доступных предметов
     private List<Subject> AvailableSubjects { get; } = Enum.GetValues<Subject>().ToList();
+
+    private void OpenChat(int directionId)
+    {
+        // Можно передать название направления как параметр
+        Navigation.NavigateTo($"/chat?id={directionId}");
+    }
 
     private void Calculate()
     {

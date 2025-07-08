@@ -17,6 +17,9 @@ namespace CheckSpecialtiesUsingTheUnifiedStateExam
 
             builder.Services.AddScoped<AdmissionService>();
 
+            builder.Services.AddHttpClient();
+            builder.Services.AddScoped<YandexGptService>();
+
 
             var app = builder.Build();
 

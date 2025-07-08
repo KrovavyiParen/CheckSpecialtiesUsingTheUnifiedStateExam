@@ -1,0 +1,177 @@
+﻿@page "/chat"
+@inject YandexGptService GptService
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+@implements IDisposable
+@rendermode InteractiveServer
+
+<div class="chat-container">
+    <div class="chat-header">
+        <h3>Консультант по направлениям обучения</h3>
+        <button @onclick="GoBack" class="btn-back">← Назад</button>
+    </div>
+
+    <div class="messages" @ref="messagesContainer">
+        @foreach (var message in messages)
+        {
+            <div class="message @message.CssClass">
+                <div class="message-content">
+                    @if (message.IsUser)
+                    {
+                        <span class="user-icon">👤</span>
+                    }
+                    else
+                    {
+                        <span class="ai-icon">🤖</span>
+                    }
+                    <div class="text">@message.Text</div>
+                </div>
+                <div class="message-time">@message.Timestamp.ToString("HH:mm")</div>
+            </div>
+        }
+        @if (isLoading)
+        {
+            <div class="message ai">
+                <div class="message-content">
+                    <span class="ai-icon">🤖</span>
+                    <div class="typing-indicator">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <EditForm EditContext="@editContext" OnSubmit="@SendMessage">
+        <div class="input-area">
+            <InputTextArea @bind-Value="inputModel.Message"
+                           placeholder="Задайте вопрос о направлении..."
+                           disabled="@isLoading"
+                           class="form-control" />
+
+            <button type="submit" disabled="@(isLoading || string.IsNullOrWhiteSpace(inputModel.Message))">
+                Отправить
+            </button>
+        </div>
+    </EditForm>
+    
+</div>
+
+@code {
+    // Сообщения в чате
+    [Parameter]
+    [SupplyParameterFromQuery(Name = "direction")]
+    public string? Direction { get; set; }
+    private readonly List<ChatMessage> messages = new();
+    private string currentMessage = "";
+    private bool isLoading;
+    private ElementReference messagesContainer;
+    private string systemPrompt = "";
+    private ChatInputModel inputModel = new ChatInputModel();
+    private EditContext? editContext;
+
+    protected override void OnParametersSet()
+    {
+        if (!string.IsNullOrEmpty(Direction))
+        {
+            systemPrompt = $"Ты консультант по направлению обучения '{Direction}'. " +
+                           "Отвечай только на вопросы, связанные с этим направлением. " +
+                           "Отвечай на русском языке.";
+        }
+    }
+
+    public class ChatInputModel
+    {
+        public string? Message { get; set; }
+    }
+
+    protected override void OnInitialized()
+    {
+        editContext = new EditContext(inputModel);
+
+        // Подписываемся на изменения полей
+        editContext.OnFieldChanged += (sender, e) =>
+        {
+            InvokeAsync(StateHasChanged);
+        };
+    }
+
+    // Модель сообщения
+    private class ChatMessage
+    {
+        public string Text { get; }
+        public bool IsUser { get; }
+        public DateTime Timestamp { get; }
+        public string CssClass => IsUser ? "user" : "ai";
+
+        public ChatMessage(string text, bool isUser)
+        {
+            Text = text;
+            IsUser = isUser;
+            Timestamp = DateTime.Now;
+        }
+    }
+
+    // Отправка сообщения
+    private async Task SendMessage()
+    {
+        if (isLoading) return;
+        if (string.IsNullOrWhiteSpace(currentMessage)) return;
+        
+        // Добавляем сообщение пользователя
+        var userMessage = currentMessage;
+        messages.Add(new ChatMessage(userMessage, true));
+        currentMessage = "";
+        
+        // Запрос к нейросети
+        isLoading = true;
+        StateHasChanged(); // Обновляем UI для показа индикатора
+        
+        try
+        {
+            var response = await GptService.GetResponseAsync(systemPrompt, userMessage);
+            messages.Add(new ChatMessage(response, false));
+        }
+        catch (Exception ex)
+        {
+            messages.Add(new ChatMessage($"Ошибка: {ex.Message}", false));
+        }
+        finally
+        {
+            isLoading = false;
+            await ScrollToBottom();
+        }
+    }
+
+    private void HandleKeyDown(KeyboardEventArgs e)
+    {
+        // Автоматическая отправка при нажатии Enter без Shift
+        if (e.Key == "Enter" && !e.ShiftKey)
+        {
+            InvokeAsync(SendMessage);
+        }
+    }
+
+    // Скролл к последнему сообщению
+    private async Task ScrollToBottom()
+    {
+        await Task.Delay(50); // Ждем обновления DOM
+        await JSRuntime.InvokeVoidAsync(
+            "scrollElementIntoView",
+            messagesContainer,
+            new { behavior = "smooth", block = "end" }
+        );
+    }
+
+    // Назад к направлениям
+    private void GoBack() => Navigation.NavigateTo("/");
+
+    // Очистка при выходе
+    public void Dispose()
+    {
+        currentMessage = "";
+        messages.Clear();
+    }
+}

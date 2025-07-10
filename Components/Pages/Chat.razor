@@ -7,7 +7,7 @@
 
 <div class="chat-container">
     <div class="chat-header">
-        <h3>Консультант по направлениям обучения</h3>
+        <h3>Консультант по направлению </h3>
         <button @onclick="GoBack" class="btn-back">← Назад</button>
     </div>
 
@@ -35,42 +35,43 @@
                 <div class="message-content">
                     <span class="ai-icon">🤖</span>
                     <div class="typing-indicator">
-                        <span></span>
-                        <span></span>
-                        <span></span>
                     </div>
                 </div>
             </div>
         }
     </div>
 
-    <EditForm EditContext="@editContext" OnSubmit="@SendMessage">
+    <EditForm Model="@inputModel" OnSubmit="@SendMessage">
         <div class="input-area">
-            <InputTextArea @bind-Value="inputModel.Message"
+            <InputTextArea @bind-Value="inputModel.Message" 
                            placeholder="Задайте вопрос о направлении..."
                            disabled="@isLoading"
-                           class="form-control" />
-
+                           class="form-control" 
+                           @onkeydown="HandleKeyDown" />
             <button type="submit" disabled="@(isLoading || string.IsNullOrWhiteSpace(inputModel.Message))">
                 Отправить
             </button>
         </div>
     </EditForm>
-    
 </div>
 
 @code {
-    // Сообщения в чате
     [Parameter]
     [SupplyParameterFromQuery(Name = "direction")]
     public string? Direction { get; set; }
+
     private readonly List<ChatMessage> messages = new();
-    private string currentMessage = "";
     private bool isLoading;
     private ElementReference messagesContainer;
-    private string systemPrompt = "";
+    private string systemPrompt;
+
+    // Модель для формы ввода
+    public class ChatInputModel
+    {
+        public string? Message { get; set; }
+    }
+    
     private ChatInputModel inputModel = new ChatInputModel();
-    private EditContext? editContext;
 
     protected override void OnParametersSet()
     {
@@ -80,22 +81,6 @@
                            "Отвечай только на вопросы, связанные с этим направлением. " +
                            "Отвечай на русском языке.";
         }
-    }
-
-    public class ChatInputModel
-    {
-        public string? Message { get; set; }
-    }
-
-    protected override void OnInitialized()
-    {
-        editContext = new EditContext(inputModel);
-
-        // Подписываемся на изменения полей
-        editContext.OnFieldChanged += (sender, e) =>
-        {
-            InvokeAsync(StateHasChanged);
-        };
     }
 
     // Модель сообщения
@@ -118,12 +103,14 @@
     private async Task SendMessage()
     {
         if (isLoading) return;
-        if (string.IsNullOrWhiteSpace(currentMessage)) return;
+        if (string.IsNullOrWhiteSpace(inputModel.Message)) return;
         
         // Добавляем сообщение пользователя
-        var userMessage = currentMessage;
+        var userMessage = inputModel.Message;
         messages.Add(new ChatMessage(userMessage, true));
-        currentMessage = "";
+        Console.WriteLine($"SendMessage called. Message: {inputModel.Message}");
+        // Очищаем поле ввода
+        inputModel.Message = "";
         
         // Запрос к нейросети
         isLoading = true;
@@ -131,7 +118,13 @@
         
         try
         {
-            var response = await GptService.GetResponseAsync(systemPrompt, userMessage);
+            var currentPrompt = string.IsNullOrWhiteSpace(systemPrompt)
+            ? $"Ты консультант по направлению обучения '{Direction}'. Отвечай только на вопросы, связанные с этим направлением. Отвечай на русском языке."
+            : systemPrompt;
+
+            // Добавляем диагностику
+            Console.WriteLine($"Sending to YandexGPT: SystemPrompt='{currentPrompt}', UserMessage='{userMessage}'");
+            var response = await GptService.GetResponseAsync(currentPrompt, userMessage);
             messages.Add(new ChatMessage(response, false));
         }
         catch (Exception ex)
@@ -141,29 +134,19 @@
         finally
         {
             isLoading = false;
-            await ScrollToBottom();
+            
         }
     }
 
-    private void HandleKeyDown(KeyboardEventArgs e)
+    // Обработка клавиши Enter
+    private async Task HandleKeyDown(KeyboardEventArgs e)
     {
-        // Автоматическая отправка при нажатии Enter без Shift
         if (e.Key == "Enter" && !e.ShiftKey)
         {
-            InvokeAsync(SendMessage);
+            await SendMessage();
         }
     }
 
-    // Скролл к последнему сообщению
-    private async Task ScrollToBottom()
-    {
-        await Task.Delay(50); // Ждем обновления DOM
-        await JSRuntime.InvokeVoidAsync(
-            "scrollElementIntoView",
-            messagesContainer,
-            new { behavior = "smooth", block = "end" }
-        );
-    }
 
     // Назад к направлениям
     private void GoBack() => Navigation.NavigateTo("/");
@@ -171,7 +154,6 @@
     // Очистка при выходе
     public void Dispose()
     {
-        currentMessage = "";
         messages.Clear();
     }
 }

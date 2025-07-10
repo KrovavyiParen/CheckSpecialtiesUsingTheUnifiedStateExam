@@ -109,7 +109,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <button @onclick="() => OpenChat(spec.Id)" class="chat-btn">
+                            <button @onclick="() => OpenChat(spec.Name)" class="chat-btn">
                                 Спросить о направлении
                             </button>
                         }
@@ -132,10 +132,10 @@
     // Список доступных предметов
     private List<Subject> AvailableSubjects { get; } = Enum.GetValues<Subject>().ToList();
 
-    private void OpenChat(int directionId)
+    private void OpenChat(string directionName)
     {
         // Можно передать название направления как параметр
-        Navigation.NavigateTo($"/chat?id={directionId}");
+        Navigation.NavigateTo($"/chat?name={directionName}");
     }
 
     private void Calculate()

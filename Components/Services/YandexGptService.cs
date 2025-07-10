@@ -89,7 +89,8 @@ public class YandexGptService
         }
         catch (Exception ex)
         {
-            return $"Ошибка: {ex.Message}";
+            Console.WriteLine($"YandexGPT error: {ex.Message}");
+            return "Не удалось получить ответ от сервиса";
         }
     }
 }

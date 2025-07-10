@@ -17,6 +17,8 @@ a, .btn-link {
     border-color: #1861ac;
 }
 
+
+
 .btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
   box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
 }
@@ -102,7 +104,7 @@ main {
     display: flex;
     flex-direction: column;
     height: 100vh;
-    max-width: 800px;
+    max-width: 900px;
     margin: 0 auto;
     padding: 20px;
     background-color: #f5f8fb;
@@ -117,6 +119,7 @@ main {
     margin-bottom: 20px;
     padding-bottom: 15px;
     border-bottom: 1px solid #e0e6ed;
+    
 }
 
 .btn-back {
@@ -124,6 +127,7 @@ main {
     color: white;
     border: none;
     padding: 8px 15px;
+    margin: 10px;
     border-radius: 5px;
     cursor: pointer;
     transition: background 0.3s;
@@ -276,4 +280,25 @@ main {
     30% {
         transform: translateY(-5px);
     }
+}
+.list-group {
+    background-color: #ffffff;
+    padding: 1rem;
+    border: 1px solid #1C4D9B;
+    display: flex;
+    flex-wrap: wrap;
+    min-width:500px;
+}
+.list-group-item {
+    background-color: #ffffff;
+    border: 0px solid #1C4D9B;
+    display:flex;
+    flex-wrap:wrap;
+}
+.chat-btn {
+    color: #fff;
+    background-color: #1b6ec2;
+    border-color: #1861ac;
+    border-radius: 4px;
+    
 }

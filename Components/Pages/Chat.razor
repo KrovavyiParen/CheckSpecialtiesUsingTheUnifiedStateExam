@@ -7,7 +7,7 @@
 
 <div class="chat-container">
     <div class="chat-header">
-        <h3>Консультант по направлению </h3>
+        <h3>Консультант по направлению @Uri.UnescapeDataString(Direction)</h3>
         <button @onclick="GoBack" class="btn-back">← Назад</button>
     </div>
 
@@ -77,7 +77,9 @@
     {
         if (!string.IsNullOrEmpty(Direction))
         {
-            systemPrompt = $"Ты консультант по направлению обучения '{Direction}'. " +
+            var decodedDirection = Uri.UnescapeDataString(Direction);
+
+            systemPrompt = $"Ты консультант по направлению обучения '{decodedDirection}'. " +
                            "Отвечай только на вопросы, связанные с этим направлением. " +
                            "Отвечай на русском языке.";
         }

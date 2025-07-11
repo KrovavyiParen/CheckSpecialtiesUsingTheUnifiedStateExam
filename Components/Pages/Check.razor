@@ -134,8 +134,9 @@
 
     private void OpenChat(string directionName)
     {
-        // Можно передать название направления как параметр
-        Navigation.NavigateTo($"/chat?name={directionName}");
+        var encodedName = Uri.EscapeDataString(directionName);
+
+        Navigation.NavigateTo($"/chat?direction={encodedName}");
     }
 
     private void Calculate()

@@ -7,5 +7,7 @@
         public string Institute { get; set; }
         public int PassingScore { get; set; }
         public List<Subject> RequiredSubjects { get; set; } = new();
+
+        public List<Subject> OptionalSubjects { get; set; } = new();
     }
 }
